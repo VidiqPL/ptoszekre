@@ -2,7 +2,7 @@ import { createVideoPicker } from '../config.js';
 // The original openWindow/moveWindowBounce behavior, with one owner for cleanup.
 export const MAX_POPUPS = 6;
 export const POPUP_INTERVAL = 5000;
-export function createPopupManager({ host = window, sessionId, onBlocked = () => {}, onLimit = () => {} }) {
+export function createPopupManager({ host = window, sessionId, onBlocked = () => {}, onLimit = () => {}, onOpened = () => {} }) {
   const windows = new Set();
   const pickVideo = createVideoPicker();
   const movement = new Map();
@@ -33,6 +33,7 @@ export function createPopupManager({ host = window, sessionId, onBlocked = () =>
       const win = source.open(url.href, '', `popup=yes,width=${width},height=${height},left=${left},top=${top}`);
       if (!win) { onBlocked(); return null; }
       windows.add(win);
+      onOpened(win);
       movement.set(win, createBouncer(win));
       if (!host.matchMedia?.('(prefers-reduced-motion: reduce)').matches) movement.get(win)(); // Move even before the child scripts load.
       return win;

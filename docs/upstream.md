@@ -12,7 +12,7 @@ The download already includes contributions credited in its `index.js`, such as 
 
 Original `openWindow`, `moveWindowBounce`, `startVideo`, `speak`, `startTheramin`, URL animation and theme animation were reviewed and adapted into separate modules. Popups open synchronously during user gestures, carry an explicit child/session identifier, share a six-window cap and close together on Stop/Escape. Popup focus does not stop the parent. No popup is automatically reopened after a visitor closes it.
 
-The rewrite omits the original's forced downloads, cross-site logout requests, permission floods, clipboard replacement, history flooding, referrer redirection, unbounded popup multiplication and navigation traps. Videos run in both the main page and child windows and can be stopped together.
+The rewrite omits the original's cross-site logout requests, permission floods, clipboard replacement, history flooding, referrer redirection, unbounded popup multiplication and navigation traps. Videos run in both the main page and child windows and can be stopped together.
 
 Original references:
 - https://github.com/jaczup/ptoszek.pl
@@ -27,3 +27,11 @@ The original only called `openWindow()` from input events; opening a new window 
 Original movement used random positive/negative velocities of 15px and a 50ms interval. The current controller uses those values, starts moving a popup before its scripts load, and clamps/reflects positions using screen coordinates that include secondary-monitor offsets. Movement is not attached to mouse events. Timer-opened videos preload and start muted without waiting on sound autoplay permission; `canplay` retries pending playback. Browser popup permission is still necessary for timer opens, and normal tabs/mobile browsers cannot be moved.
 
 Other intentional differences from upstream remain listed above: no third-party forced logouts, clipboard spam, navigation traps, or permission floods. Source remains organized into separate modules.
+
+## Mouse activation and bundled downloads
+
+The first `mousemove` on `/onlyfans` now starts the session once, without waiting for a click or three spaces. A click/tap or Space/Enter remains available as a fallback. The mouse listener is removed at activation, so Escape is not undone by moving the pointer again.
+
+The original `FILE_DOWNLOADS` contains image paths, and `triggerFileDownload()` clicks an anchor with the `download` attribute. `effects/downloads.js` restores that mechanism and extends the pool to all bundled photos/GIFs and videos. The original `jaczupme.jpg` entry refers to a missing file; the new pool uses the actual `jaczupme.png`. Downloads share a three-attempt budget across the parent and its popup events. No external files, generated payloads, or automatic-download permission bypass is used. Browsers can refuse these download attempts.
+
+Movement limitation: MDN documents that Firefox cannot move ordinary/multi-tab windows, and Wayland may prevent window movement entirely: https://developer.mozilla.org/en-US/docs/Web/API/Window/moveTo . Mouse movement is not a user-activation event, so popup/audio/download permissions remain relevant: https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/User_activation .

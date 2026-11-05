@@ -4,10 +4,11 @@ import { showBrowserFacts } from './effects/console.js';
 import { createMedia } from './effects/media.js';
 import { createPopupManager } from './effects/popups.js';
 import { startAudio } from './effects/audio.js';
+import { createDownloads } from './effects/downloads.js';
 const $ = id => document.getElementById(id);
 const video = $('bird-video');
-const media = createMedia(video, $('status'), new URLSearchParams(location.search).get('video'), {background: new URLSearchParams(location.search).get('child') === 'true'});
-let session = null, popups = null, audio = null, spaces = 0;
+const media = createMedia(video, $('status'), new URLSearchParams(location.search).get('video'), {background: true});
+let session = null, popups = null, audio = null;
 let owner = null;
 const params = new URLSearchParams(location.search);
 try {
@@ -20,20 +21,26 @@ try {
 function openBird() {
   if (!session) return;
   if (owner) owner.open(window); else popups.open();
+  audio?.resume();
   audio?.speak();
 }
 function start({child = false} = {}) {
   if (session) return;
-  session = new Session(); spaces = 0; $('status').textContent = '';
+  window.removeEventListener('mousemove', startOnMouseMove);
+  session = new Session(); $('status').textContent = '';
   if (!child) {
     const sessionId = crypto.randomUUID();
+    const downloads = createDownloads();
+    session.cleanup(() => downloads.stop());
     popups = createPopupManager({sessionId,
+      onOpened: () => downloads.trigger(),
       onBlocked: () => { $('status').textContent = 'Przeglądarka zablokowała okienko. Zezwól na wyskakujące okna dla tej strony — następne pojawi się automatycznie w ciągu 5 sekund.'; },
       onLimit: () => { $('status').textContent = 'Masz już 6 ptoszków. Zamknij jedno okienko, żeby wpuścić następnego.'; }
     });
     window.ptoszekDemo = {sessionId, active: true, open: (source = window) => popups?.open(source), stop};
     // Open before media/fullscreen calls can consume the user activation.
     popups.open();
+    if (downloads.attempts === 0) downloads.trigger();
     popups.start(session);
     session.cleanup(() => { window.ptoszekDemo.active = false; popups.closeAll(); popups = null; });
   } else {
@@ -52,10 +59,12 @@ function start({child = false} = {}) {
 function stop() {
   if (!session) return;
   const current = session; session = null; current.stop();
-  $('spy-console').hidden = true; $('experience').hidden = true; $('intro').hidden = false; spaces = 0;
+  $('spy-console').hidden = true; $('experience').hidden = true; $('intro').hidden = false;
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
 }
 function stopAll() { if (owner?.active) owner.stop(); else stop(); }
+function startOnMouseMove() { start(); }
+if (!owner) window.addEventListener('mousemove', startOnMouseMove, {passive: true});
 $('start').addEventListener('click', () => start());
 document.addEventListener('click', event => {
   if (!session || event.target.closest('button,a,.spy-console')) return;
@@ -69,9 +78,7 @@ document.addEventListener('keydown', event => {
     if (event.code === 'Space' || event.code === 'Enter') { event.preventDefault(); media.resume(); openBird(); }
     return;
   }
-  if (event.code !== 'Space') return;
-  event.preventDefault(); spaces++;
-  if (spaces === 3) start();
+  if (event.code === 'Space' || event.code === 'Enter') { event.preventDefault(); start(); }
 });
 // Popup focus must NOT stop the parent: unlike pagehide, it does not end the session.
 window.addEventListener('pagehide', stop);

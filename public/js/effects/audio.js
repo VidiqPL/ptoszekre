@@ -23,5 +23,5 @@ export function startAudio(session) {
     } catch { audio?.close().catch(() => {}); audio = null; }
   }
   session.cleanup(() => { synth?.cancel(); if (audio) { oscillator?.stop(); audio.close().catch(() => {}); } });
-  return { speak };
+  return { speak, resume() { audio?.resume().catch(() => {}); } };
 }
