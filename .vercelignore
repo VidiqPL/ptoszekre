@@ -1,0 +1,6 @@
+ptoszek.pl-main/
+ptoszek.pl-main.zip
+.directory
+node_modules/
+.vercel/
+tests/
