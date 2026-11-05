@@ -19,8 +19,9 @@
     <h3>(na telefonie dotknij ptoszka)</h3>
     <button class="bird-button" id="start" aria-label="Kliknij w ptoszka"><img src="/media/images/intro.gif" alt="Cute ptok" width="300" height="300"></button>
   </div>
+  <div class="preload-stage" aria-hidden="true"><video id="bird-video" autoplay loop playsinline preload="none" aria-label="Ptoszek"></video></div>
   <div id="experience" hidden>
-    <div id="stage"><video id="bird-video" autoplay loop playsinline preload="none" aria-label="Ptoszek"></video></div>
+    <div id="stage"></div>
     <div class="logout-messages" id="effects" aria-hidden="true"></div>
     <div class="status-messages"><p id="status" role="status"></p><p id="audio-status" role="status"></p></div>
     <details class="spy-console" id="spy-console" hidden>

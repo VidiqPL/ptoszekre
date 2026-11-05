@@ -48,3 +48,6 @@ body { animation: blurslowly 15s infinite; }
 #stage.wobble { animation: wobble .3s; }
 @media (max-width: 420px) { .hello-message { margin: 40px 16px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* Upstream warmup: keep the muted player attached, rather than display:none. */
+.preload-stage { position: fixed; width: 1px; height: 1px; overflow: hidden; top: -10px; left: -10px; pointer-events: none; }

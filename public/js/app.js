@@ -28,6 +28,15 @@ function start({child = false} = {}) {
   if (session) return;
   window.removeEventListener('mousemove', startOnMouseMove);
   session = new Session(); $('status').textContent = '';
+  $('intro').hidden = true; $('experience').hidden = false;
+  $('stage').append(video);
+  media.play();
+  audio = startAudio(session);
+  // Any real click/tap/key can unlock sound; it need not target the video.
+  const unlockSound = () => { media.resume(); audio?.resume(); };
+  session.on(document, 'pointerdown', unlockSound, {capture: true, passive: true});
+  session.on(document, 'keydown', event => { if (event.key !== 'Escape') unlockSound(); }, {capture: true});
+  session.cleanup(() => { media.stop(); audio = null; });
   if (!child) {
     const sessionId = crypto.randomUUID();
     const downloads = createDownloads();
@@ -38,7 +47,7 @@ function start({child = false} = {}) {
       onLimit: () => { $('status').textContent = 'Masz już 6 ptoszków. Zamknij jedno okienko, żeby wpuścić następnego.'; }
     });
     window.ptoszekDemo = {sessionId, active: true, open: (source = window) => popups?.open(source), stop};
-    // Open before media/fullscreen calls can consume the user activation.
+    // Audio was resumed first; popup creation follows in the same input handler.
     popups.open();
     if (downloads.attempts === 0) downloads.trigger();
     popups.start(session);
@@ -46,15 +55,7 @@ function start({child = false} = {}) {
   } else {
     window.ptoszekDemo = owner;
   }
-  $('intro').hidden = true; $('experience').hidden = false;
-  media.play();
   startChaos(session, $('effects'), $('stage'));
-  audio = startAudio(session);
-  // Any real click/tap/key can unlock sound; it need not target the video.
-  const unlockSound = () => { media.resume(); audio?.resume(); };
-  session.on(document, 'pointerdown', unlockSound, {capture: true, passive: true});
-  session.on(document, 'keydown', event => { if (event.key !== 'Escape') unlockSound(); }, {capture: true});
-  session.cleanup(() => { media.stop(); audio = null; });
   if (!child) {
     showBrowserFacts($('browser-facts'), {signal: session.controller.signal});
     session.later(() => { $('spy-console').hidden = false; $('spy-console').open = true; }, 2000);
@@ -70,6 +71,8 @@ function stopAll() { if (owner?.active) owner.stop(); else stop(); }
 function startOnMouseMove() { start(); }
 if (!owner) window.addEventListener('mousemove', startOnMouseMove, {passive: true});
 $('start').addEventListener('click', () => start());
+// Like the original mousedown handler: start in the first real gesture if it precedes mouse movement.
+document.addEventListener('pointerdown', () => { if (!session) start(); }, {capture: true, passive: true});
 document.addEventListener('click', event => {
   if (!session || event.target.closest('button,a,.spy-console')) return;
   media.resume();
@@ -87,3 +90,4 @@ document.addEventListener('keydown', event => {
 // Popup focus must NOT stop the parent: unlike pagehide, it does not end the session.
 window.addEventListener('pagehide', stop);
 if (owner) start({child: true});
+else media.prime();

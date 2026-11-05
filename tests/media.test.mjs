@@ -36,3 +36,13 @@ test('blocked sound is explained, muted fallback plays, and any later unlock cle
  await new Promise(r=>setTimeout(r,0));assert.equal(video.muted,true);assert.match(status.textContent,/blokuje dźwięk/);
  media.resume();await new Promise(r=>setTimeout(r,0));assert.equal(video.muted,false);assert.equal(status.textContent,'');media.stop();
 });
+
+test('upstream-style warmup plays muted first and activation reuses the same loaded source',()=>{
+ const video=new Video();const calls=[];let loads=0,src;
+ Object.defineProperty(video,'src',{configurable:true,get(){return src;},set(value){src=value;loads++;}});
+ video.play=()=>{calls.push(video.muted);return Promise.resolve();};
+ const media=createMedia(video,{textContent:''},'duck.mp4');
+ media.prime();media.prime();assert.deepEqual(calls,[true]);assert.equal(loads,1);
+ media.play();assert.deepEqual(calls,[true,false]);assert.equal(loads,1,'activation must not reload the prepared movie');
+ media.stop();
+});

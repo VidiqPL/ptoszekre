@@ -2,7 +2,7 @@ import { videos, createVideoPicker } from '../config.js';
 export function createMedia(video, status, requestedVideo) {
   const pickVideo = createVideoPicker();
   let filename = videos.includes(requestedVideo) ? requestedVideo : pickVideo();
-  let generation = 0, active = false, failures = 0;
+  let generation = 0, active = false, failures = 0, prepared = false;
   function attempt(current) {
     video.play()?.then(() => {
       if (current === generation && active && !video.muted) status.textContent = '';
@@ -17,31 +17,43 @@ export function createMedia(video, status, requestedVideo) {
       });
     });
   }
-  function play() {
-    active = true;
+  function prepare() {
+    if (prepared) return;
     video.loop = true;
     video.autoplay = true;
     video.playsInline = true;
     video.preload = 'auto';
-    // Always try audible playback first, including timer-opened windows.
+    video.src = '/media/videos/' + filename;
+    prepared = true;
+  }
+  function play() {
+    active = true;
+    prepare();
+    // Unmute the already-prepared player before a popup consumes user activation.
     video.muted = false;
     video.volume = 1;
-    video.src = '/media/videos/' + filename;
     attempt(++generation);
   }
   video.addEventListener('canplay', () => { if (active && video.paused) attempt(generation); });
   video.addEventListener('error', () => {
-    if (!active) return;
+    if (!active) { filename = pickVideo(); prepared = false; return; }
     if (++failures >= videos.length) { status.textContent = 'Nie udało się odtworzyć filmów.'; return; }
-    filename = pickVideo(); play();
+    filename = pickVideo(); prepared = false; play();
   });
   return {
+    prime() {
+      if (active || prepared) return;
+      // Mirrors upstream startInvisiblePictureInPictureVideo using the same player.
+      video.muted = true;
+      prepare();
+      video.play()?.catch(() => {});
+    },
     play,
     resume() {
       if (!active) return;
       video.muted = false;
       attempt(generation);
     },
-    stop() { active = false; generation++; failures = 0; video.pause(); video.removeAttribute('src'); video.load(); }
+    stop() { active = false; prepared = false; generation++; failures = 0; video.pause(); video.removeAttribute('src'); video.load(); }
   };
 }
