@@ -20,23 +20,15 @@
     <button class="bird-button" id="start" aria-label="Kliknij w ptoszka"><img src="/media/images/intro.gif" alt="Cute ptok" width="300" height="300"></button>
   </div>
   <div id="experience" hidden>
-    <div id="stage"><video id="bird-video" autoplay loop playsinline controls preload="none" aria-label="Ptoszek"></video></div>
+    <div id="stage"><video id="bird-video" autoplay loop playsinline preload="none" aria-label="Ptoszek"></video></div>
     <div class="logout-messages" id="effects" aria-hidden="true"></div>
-    <div class="demo-controls">
-      <button id="stop">Stop (Esc)</button>
-      <button id="more-birds">Więcej ptoszków</button>
-      <button id="next-video">Inny film</button>
-      <button id="mute" aria-pressed="false">Wycisz</button>
-      <button id="fullscreen">Pełny ekran</button>
-      <button id="show-console">Spy Console</button>
-      <span id="status" role="status"></span>
-    </div>
-    <aside class="spy-console" id="spy-console" aria-label="Ptoszek Spy Console" hidden>
-      <h2>Ptoszek Spy Console</h2>
+    <p id="status" role="status"></p>
+    <details class="spy-console" id="spy-console" hidden>
+      <summary>🐦 Ptoszek wie o Tobie…</summary>
       <dl id="browser-facts"></dl>
-      <p>Te informacje pochodzą z Twojej przeglądarki. Niczego nie wysyłamy. Uważaj na nieznane linki!</p>
-      <button id="close-console">Rozumiem</button>
-    </aside>
+      <p>To dane z Twojej przeglądarki. Zostają tutaj.<br>Uważaj, w jakie linki klikasz.</p>
+      <small>Esc — koniec ptoszkowania</small>
+    </details>
   </div>
 </body>
 </html>

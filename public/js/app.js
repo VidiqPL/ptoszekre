@@ -6,7 +6,7 @@ import { createPopupManager, bouncePopup } from './effects/popups.js';
 import { startAudio } from './effects/audio.js';
 const $ = id => document.getElementById(id);
 const video = $('bird-video');
-const media = createMedia(video, $('status'));
+const media = createMedia(video, $('status'), new URLSearchParams(location.search).get('video'));
 let session = null, popups = null, audio = null, spaces = 0;
 let owner = null;
 const params = new URLSearchParams(location.search);
@@ -28,7 +28,7 @@ function start({child = false} = {}) {
   if (!child) {
     const sessionId = crypto.randomUUID();
     popups = createPopupManager({sessionId,
-      onBlocked: () => { $('status').textContent = 'Przeglądarka zablokowała okienko. Zezwól na wyskakujące okna dla tej strony i kliknij „Więcej ptoszków”.'; },
+      onBlocked: () => { $('status').textContent = 'Przeglądarka zablokowała okienko. Zezwól na wyskakujące okna dla tej strony i kliknij film albo naciśnij spację.'; },
       onLimit: () => { $('status').textContent = 'Masz już 6 ptoszków. Zamknij jedno okienko, żeby wpuścić następnego.'; }
     });
     window.ptoszekDemo = {sessionId, active: true, open: (source = window) => popups?.open(source), stop};
@@ -46,7 +46,7 @@ function start({child = false} = {}) {
   session.cleanup(() => { media.stop(); audio = null; });
   if (!child) {
     showBrowserFacts($('browser-facts'));
-    session.later(() => { $('spy-console').hidden = false; }, 2000);
+    session.later(() => { $('spy-console').hidden = false; $('spy-console').open = true; }, 2000);
   }
 }
 function stop() {
@@ -57,30 +57,16 @@ function stop() {
 }
 function stopAll() { if (owner?.active) owner.stop(); else stop(); }
 $('start').addEventListener('click', () => start());
-$('stop').addEventListener('click', stopAll);
-$('more-birds').addEventListener('click', openBird);
-$('next-video').addEventListener('click', () => media.next());
-$('show-console').addEventListener('click', () => { showBrowserFacts($('browser-facts')); $('spy-console').hidden = false; });
-$('close-console').addEventListener('click', () => { $('spy-console').hidden = true; });
-video.addEventListener('error', () => { if(session) $('status').textContent = 'Ten film nie działa w tej przeglądarce. Kliknij „Inny film”.'; });
-video.addEventListener('volumechange', () => { $('mute').setAttribute('aria-pressed', String(video.muted)); $('mute').textContent = video.muted ? 'Włącz dźwięk' : 'Wycisz'; });
-$('mute').addEventListener('click', () => { video.muted = !video.muted; });
-$('fullscreen').addEventListener('click', async () => {
-  try {
-    if (document.fullscreenElement) await document.exitFullscreen();
-    else if ($('experience').requestFullscreen) await $('experience').requestFullscreen();
-    else $('status').textContent = 'Pełny ekran jest niedostępny.';
-  } catch { $('status').textContent = 'Pełny ekran jest niedostępny.'; }
-});
 document.addEventListener('click', event => {
-  if (!session || event.target.closest('button,a,video,.spy-console')) return;
+  if (!session || event.target.closest('button,a,.spy-console')) return;
+  media.resume();
   openBird();
 });
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape') { stopAll(); return; }
   if (event.repeat || event.ctrlKey || event.metaKey || event.altKey || event.target.closest('button,a,input,textarea,select,[contenteditable]')) return;
   if (session) {
-    if (event.code === 'Space' || event.code === 'Enter') { event.preventDefault(); openBird(); }
+    if (event.code === 'Space' || event.code === 'Enter') { event.preventDefault(); media.resume(); openBird(); }
     return;
   }
   if (event.code !== 'Space') return;

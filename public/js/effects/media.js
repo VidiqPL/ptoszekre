@@ -1,16 +1,38 @@
-import { videos } from '../config.js';
-export function createMedia(video, status) {
-  let index = Math.floor(Math.random() * videos.length), generation = 0;
-  function play() {
-    const current = ++generation;
-    video.src = '/media/videos/' + videos[index];
+import { videos, createVideoPicker } from '../config.js';
+export function createMedia(video, status, requestedVideo) {
+  const pickVideo = createVideoPicker();
+  let filename = videos.includes(requestedVideo) ? requestedVideo : pickVideo();
+  let generation = 0, active = false, failures = 0;
+  function attempt(current) {
     video.play()?.catch(() => {
-      if (current === generation) status.textContent = 'Kliknij film, żeby go odtworzyć. Przeglądarka może blokować automatyczny dźwięk.';
+      if (current !== generation || !active) return;
+      // Autoplay with sound can be denied in a newly opened window. Keep the film moving.
+      video.muted = true;
+      video.play()?.catch(() => {
+        if (current === generation && active) status.textContent = 'Kliknij film, żeby go odtworzyć.';
+      });
     });
   }
+  function play() {
+    active = true;
+    video.loop = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.src = '/media/videos/' + filename;
+    attempt(++generation);
+  }
+  video.addEventListener('error', () => {
+    if (!active) return;
+    if (++failures >= videos.length) { status.textContent = 'Nie udało się odtworzyć filmów.'; return; }
+    filename = pickVideo(); play();
+  });
   return {
     play,
-    next() { index = (index + 1) % videos.length; play(); },
-    stop() { generation++; video.pause(); video.removeAttribute('src'); video.load(); }
+    resume() {
+      if (!active) return;
+      video.muted = false;
+      attempt(generation);
+    },
+    stop() { active = false; generation++; failures = 0; video.pause(); video.removeAttribute('src'); video.load(); }
   };
 }

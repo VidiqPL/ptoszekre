@@ -5,3 +5,20 @@ export const messages = ['Ptasie radio nadaje.','Zptoszkowany!','Gołąb patrzy.
 export const pick = list => list[Math.floor(Math.random() * list.length)];
 
 export const phrases = ['hello my name is ptoszek, lol', 'birds are funny lalalalalalalallalala', 'wgl co u cb bo u mn dbr', 'knuuurrr eksplozja'];
+
+// A shuffled bag gives each popup a random film without immediate repeats.
+export function createVideoPicker(random = Math.random) {
+  let bag = [], previous;
+  return () => {
+    if (!bag.length) {
+      bag = [...videos];
+      for (let i = bag.length - 1; i > 0; i--) {
+        const j = Math.floor(random() * (i + 1));
+        [bag[i], bag[j]] = [bag[j], bag[i]];
+      }
+      if (bag.at(-1) === previous) [bag[0], bag[bag.length - 1]] = [bag.at(-1), bag[0]];
+    }
+    previous = bag.pop();
+    return previous;
+  };
+}

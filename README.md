@@ -3,9 +3,9 @@
 Static, modular version of [jaczup/ptoszek.pl](https://github.com/jaczup/ptoszek.pl), with its original bundled bird media. The original download and ZIP are preserved outside the published directory.
 
 - `/` — empty home page, top panel, one **ONLYFANS** link.
-- `/onlyfans` — original white Ptoszek page, original Polish headings and 300px GIF. Click the bird or press Space three times to start original bundled videos in the page and a separate 480×260 popup. Further clicks, Space/Enter or “Więcej ptoszków” open more bird windows. Popup windows bounce when supported. Speech, a mouse-controlled theremin, animated URL/theme color, title messages, cursor trails and a browser-information console run after activation.
+- `/onlyfans` — original white Ptoszek page, original Polish headings and 300px GIF. Click the bird or press Space three times to start original bundled videos in the page and a separate 480×260 popup. Clicking a playing video or pressing Space/Enter opens more bird windows. Each popup receives a random video from a shuffled list, with no repeats until the list is exhausted; videos autoplay and loop. If autoplay with audio is blocked, playback retries muted and a click enables sound. There is no control toolbar or native video controls. The browser-information console is a small white panel that can be collapsed by clicking its heading. Popup windows bounce when supported. Speech, a mouse-controlled theremin, animated URL/theme color, title messages, cursor trails and a browser-information console run after activation.
 - Stop or Escape ends the session and closes its child windows. Popup focus and switching tabs do not stop the parent. Up to six popups can be open at once; closed slots can be reused. Reduced-motion preferences disable animated effects and moving windows.
-- Browsers may require permission for popups and audio. A blocked popup displays a message; enable popups for the site and use “Więcej ptoszków” to retry. The site does not bypass browser permissions. Mobile browsers may open tabs instead of movable windows.
+- Browsers may require permission for popups and audio. A blocked popup displays a message; enable popups for the site and click the video or press Space to retry. The site does not bypass browser permissions. Mobile browsers may open tabs instead of movable windows.
 
 ## Run
 

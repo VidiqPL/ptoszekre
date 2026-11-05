@@ -31,17 +31,18 @@ img { width: 300px; max-width: 100%; height: auto; }
 body { animation: blurslowly 15s infinite; }
 #experience, #stage { width: 100%; height: 100%; background: #000; }
 #bird-video { width: 100%; height: 100%; object-fit: contain; }
-.demo-controls { position: fixed; bottom: 45px; left: 8px; right: 8px; z-index: 20; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; pointer-events: none; }
-.demo-controls button { pointer-events: auto; }
-#status { color: white; font: 12px sans-serif; background: #000; }
+#status { position: fixed; bottom: 8px; left: 12px; right: 12px; margin: 0; color: white; font: 12px/1.5 sans-serif; text-shadow: 0 1px 3px black; pointer-events: none; z-index: 20; }
+#status:empty { display: none; }
 .trail { position: fixed; left: 0; top: 0; pointer-events: none; font-size: 28px; }
 .overlay-message { position: fixed; font-weight: bold; font-size: 24px; }
-.spy-console { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); box-sizing: border-box; width: 90%; max-width: 600px; max-height: 80%; overflow: auto; z-index: 30; background: #050f05; color: #34eb7d; border: 3px solid #34eb7d; box-shadow: 0 0 30px #34eb7d80; padding: 20px; font: 14px 'Courier New', monospace; }
-.spy-console h2 { text-align: center; border-bottom: 2px dashed #34eb7d; padding-bottom: 10px; }
-.spy-console dl > div { margin: 10px 0; overflow-wrap: anywhere; }
-.spy-console dt { display: inline; }
-.spy-console dd { display: inline; margin-left: 10px; color: white; }
-.spy-console p { line-height: 1.5; }
+.spy-console { position: fixed; right: 20px; bottom: 28px; box-sizing: border-box; width: min(340px, calc(100% - 32px)); max-height: 70%; overflow: auto; z-index: 30; background: #fff; color: #111; border: 1px solid #d4d4d4; border-radius: 5px; box-shadow: 0 5px 20px #0002; padding: 16px 18px; font: 13px/1.6 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+.spy-console summary { font-size: 15px; font-weight: 700; cursor: pointer; }
+.spy-console dl { margin: 14px 0 10px; }
+.spy-console dl > div { display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid #eee; padding: 5px 0; }
+.spy-console dt { color: #666; }
+.spy-console dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
+.spy-console p { margin: 12px 0; color: #555; font-size: 12px; }
+.spy-console small { color: #888; font-size: 10px; }
 @keyframes wobble { 50% { transform: scale(1.03) skew(2deg); } }
 #stage.wobble { animation: wobble .3s; }
 @media (max-width: 420px) { .hello-message { margin: 40px 16px; } }

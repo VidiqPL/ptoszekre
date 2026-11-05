@@ -1,7 +1,9 @@
+import { createVideoPicker } from '../config.js';
 // The original openWindow/moveWindowBounce behavior, with one owner for cleanup.
 export const MAX_POPUPS = 6;
 export function createPopupManager({ host = window, sessionId, onBlocked = () => {}, onLimit = () => {} }) {
   const windows = new Set();
+  const pickVideo = createVideoPicker();
   function prune() { for (const win of windows) if (win.closed) windows.delete(win); }
   return {
     open(source = host) {
@@ -14,6 +16,7 @@ export function createPopupManager({ host = window, sessionId, onBlocked = () =>
       const url = new URL('/onlyfans', host.location.origin);
       url.searchParams.set('child', 'true');
       url.searchParams.set('session', sessionId);
+      url.searchParams.set('video', pickVideo());
       // Must stay synchronous inside the click/keydown handler: browsers block delayed opens.
       const win = source.open(url.href, '', `popup=yes,width=${width},height=${height},left=${left},top=${top}`);
       if (!win) { onBlocked(); return null; }

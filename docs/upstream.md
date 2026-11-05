@@ -17,3 +17,5 @@ The rewrite omits the original's forced downloads, cross-site logout requests, p
 Original references:
 - https://github.com/jaczup/ptoszek.pl
 - https://github.com/feross/TheAnnoyingSite.com
+
+The playback view has no toolbar or native video controls. Clicking the video or pressing Space/Enter opens another popup using that window’s user activation. Each child URL receives a video from a shuffled list, so sibling windows have different films until the playlist is exhausted. Videos autoplay and loop; blocked audio falls back to muted playback, and an interaction retries with sound. The local-only console uses a collapsible white panel to match the original plain page. Escape still stops playback and closes owned windows.
