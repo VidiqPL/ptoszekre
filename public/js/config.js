@@ -4,7 +4,16 @@ export const videos = ['duck.mp4','szybkakaczka.mp4','kaczuszka.mp4','golomb.mp4
 export const messages = ['Ptasie radio nadaje.','Zptoszkowany!','Gołąb patrzy.','100% ptak.','Ptaszek przejął scenę.'];
 export const pick = list => list[Math.floor(Math.random() * list.length)];
 
-export const phrases = ['hello my name is ptoszek, lol', 'birds are funny lalalalalalalallalala', 'wgl co u cb bo u mn dbr', 'knuuurrr eksplozja'];
+export const phrases = [
+  'hello my name is ptoszek, lol',
+  'birds are funny lalalalalalalallalala',
+  'wgl co u cb bo u mn dbr',
+  'knuuurrr eksplozja',
+  'hee haw hee haw hee haw hee haw hee haw hee haw hee haw hee haw hee haw hee haw hee haw',
+  'abcdefghijklmnopqrstuvwxyz abcdefghijklmnopqrstuvwxyz',
+  'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaak',
+  'eyo eyo eyo eyo eyo eyo eyo eyo eyo eyo eyo eyo eyo eyo eyo eyo eyo eyo eyo eyo eyo eyo eyo eyo'
+];
 
 // A shuffled bag gives each popup a random film without immediate repeats.
 export function createVideoPicker(random = Math.random) {

@@ -1,49 +1,42 @@
 # Upstream review — 2026-11-05
 
-Source: https://github.com/jaczup/ptoszek.pl . Reviewed the three open pull requests via GitHub's file diffs. This is an adaptation, not a claim that the upstream PRs were merged or applied unchanged.
+Based on the downloaded `ptoszek.pl-main/index.js` and `index.html`, from https://github.com/jaczup/ptoszek.pl . The entire 1,174-line script was reread for the current audio change. Its blob matches upstream `main`: `a61bdbe09d6868e9cb9bd507ce42f2be8a772780`.
+
+## Activation and audio
+
+The original `interceptUserInput` responds to mouse presses, touch and key events; it does not activate on mouse movement. The site now restores click/tap activation and the original Space ×3 prompt/fallback. Mere mouse movement leaves the intro visible and does not create an AudioContext or spawn windows.
+
+The original audio path combines these mechanisms:
+
+- `startInvisiblePictureInPictureVideo`: a muted looping video is prepared before interaction in a 1px offscreen area. The modular version retains this warmup and moves that same player to the stage without resetting its source.
+- `enablePictureInPicture` / `startVideo`: unmuted media is started inside the input handler. The modular version unmutes the prepared player immediately on the first native press, before opening popups; it does not force Picture-in-Picture.
+- `speak`: the original phrase list and speech synthesis are retained, including “To był błąd”.
+- `startTheramin`: the periodic wave is copied from the original cosine/sine arrays, along with the 50 Hz pitch base, 4000 Hz pitch range, default initial gain and mouse-position gain multiplied by three. The prior simplified quiet sawtooth has been removed. Audio no longer depends on a reduced-motion preference.
+
+Unlike the original's repeated `startTheramin()` on every input event, the modular version keeps one audio graph per window/session and closes it on Escape. Media playback is attempted with sound immediately; browser refusal alone triggers a muted fallback. A second film click is not required for the initial sound.
+
+Verified with native input in Firefox and Chromium under normal autoplay restrictions: moving to the bird leaves the intro intact; the first mousedown produces an unmuted playing film and a running AudioContext with nonzero audio samples; mouseup does not create duplicate contexts. Escape closes audio and popups. Space ×3 also starts the session.
+
+## Popup windows and bundled downloads
+
+`openWindow`, `moveWindowBounce` and `startVideo` were adapted into separate modules. Each child receives a random video from a shuffled list and loops it. Windows move at 15px per 50ms in randomized directions and bounce within display coordinates, including secondary monitors. The first click opens one popup. The requested automatic five-second interval runs only in the parent, with at most six open windows, and is canceled on Escape/page exit. Closed windows are not immediately recreated; the next scheduled open may use a free slot.
+
+The original `triggerFileDownload` clicks a link with the `download` attribute. The rewrite uses that same mechanism for bundled photos/GIFs and videos, with a shared maximum of three attempts per session. The original missing `jaczupme.jpg` path is corrected to the actual `jaczupme.png`. Browser download and popup permissions apply normally.
+
+Firefox cannot move ordinary/multi-tab windows, and Wayland may disallow movement entirely: https://developer.mozilla.org/en-US/docs/Web/API/Window/moveTo . Browser autoplay policy: https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Autoplay .
+
+## Pull requests
+
+These are adaptations, not claims that the upstream PRs were merged or applied unchanged.
 
 | PR | Author | Result |
 | --- | --- | --- |
-| [#25](https://github.com/jaczup/ptoszek.pl/pull/25) | Kocmouch | Adapted changing titles, cursor trail, overlay messages and a brief stage wobble into `effects/chaos.js`. One bounded session; Stop clears everything. Keyboard locks, notification prompts, selection hijacking and wake-lock loops omitted. |
-| [#28](https://github.com/jaczup/ptoszek.pl/pull/28) | UhcWolfe (diff credits @kubso) | Adapted the browser-information console into `effects/console.js`: local language, timezone, screen, CPU, RAM estimate, touch and theme. No third-party IP lookup, location request, network transmission, or claims of compromise. |
-| [#31](https://github.com/jaczup/ptoszek.pl/pull/31) | szymsun | Reviewed, not implemented: this adds forced USOSWEB logout requests to unrelated university accounts. |
+| [#25](https://github.com/jaczup/ptoszek.pl/pull/25) | Kocmouch | Adapted titles, cursor trails, overlays and stage wobble. Effects are cleaned up on Stop; keyboard locks, notification prompts, selection hijacking and wake-lock loops omitted. |
+| [#28](https://github.com/jaczup/ptoszek.pl/pull/28) | UhcWolfe (diff credits @kubso) | Local browser console with 30+ facts and optional GPU/battery/storage estimates. Values use textContent; no external lookup, IP collection or location prompt. |
+| [#31](https://github.com/jaczup/ptoszek.pl/pull/31) | szymsun | Reviewed, not implemented: forced USOSWEB logout requests to unrelated university accounts. |
 
-The download already includes contributions credited in its `index.js`, such as additional videos and bird images. Those bundled files are retained. The current version restores the original intro HTML wording, white background, typography and GIF from the download, moving styles to a separate CSS file. The downloaded `index.js` matches the upstream `main` blob `a61bdbe09d6868e9cb9bd507ce42f2be8a772780` checked on 2026-11-05.
+## Intentional differences
 
-Original `openWindow`, `moveWindowBounce`, `startVideo`, `speak`, `startTheramin`, URL animation and theme animation were reviewed and adapted into separate modules. Popups open synchronously during user gestures, carry an explicit child/session identifier, share a six-window cap and close together on Stop/Escape. Popup focus does not stop the parent. No popup is automatically reopened after a visitor closes it.
+No cross-site logout requests, camera/microphone/device permission floods, clipboard replacement, navigation/history traps, forced referrer redirects, print/alert loops or unbounded popup spawning. The original intro appearance and media are retained. Source is split into modules, and Escape ends the session.
 
-The rewrite omits the original's cross-site logout requests, permission floods, clipboard replacement, history flooding, referrer redirection, unbounded popup multiplication and navigation traps. Videos run in both the main page and child windows and can be stopped together.
-
-Original references:
-- https://github.com/jaczup/ptoszek.pl
-- https://github.com/feross/TheAnnoyingSite.com
-
-The playback view has no toolbar or native video controls. Clicking the video or pressing Space/Enter opens another popup using that window’s user activation. Each child URL receives a video from a shuffled list, so sibling windows have different films until the playlist is exhausted. Videos autoplay and loop; blocked audio falls back to muted playback, and an interaction retries with sound. The local-only console uses a collapsible white panel to match the original plain page. Escape still stops playback and closes owned windows.
-
-## Automatic windows and movement
-
-The original only called `openWindow()` from input events; opening a new window every five seconds is an explicit addition. One parent-owned interval opens up to six simultaneous windows, retries blocked attempts at the next tick, and is cleared on Escape/page exit. Child windows do not create competing auto-open timers.
-
-Original movement used random positive/negative velocities of 15px and a 50ms interval. The current controller uses those values, starts moving a popup before its scripts load, and clamps/reflects positions using screen coordinates that include secondary-monitor offsets. Movement is not attached to mouse events. Timer-opened videos preload and start muted without waiting on sound autoplay permission; `canplay` retries pending playback. Browser popup permission is still necessary for timer opens, and normal tabs/mobile browsers cannot be moved.
-
-Other intentional differences from upstream remain listed above: no third-party forced logouts, clipboard spam, navigation traps, or permission floods. Source remains organized into separate modules.
-
-## Mouse activation and bundled downloads
-
-The first `mousemove` on `/onlyfans` now starts the session once, without waiting for a click or three spaces. A click/tap or Space/Enter remains available as a fallback. The mouse listener is removed at activation, so Escape is not undone by moving the pointer again.
-
-The original `FILE_DOWNLOADS` contains image paths, and `triggerFileDownload()` clicks an anchor with the `download` attribute. `effects/downloads.js` restores that mechanism and extends the pool to all bundled photos/GIFs and videos. The original `jaczupme.jpg` entry refers to a missing file; the new pool uses the actual `jaczupme.png`. Downloads share a three-attempt budget across the parent and its popup events. No external files, generated payloads, or automatic-download permission bypass is used. Browsers can refuse these download attempts.
-
-Movement limitation: MDN documents that Firefox cannot move ordinary/multi-tab windows, and Wayland may prevent window movement entirely: https://developer.mozilla.org/en-US/docs/Web/API/Window/moveTo . Mouse movement is not a user-activation event, so popup/audio/download permissions remain relevant: https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/User_activation .
-
-## Extended facts and immediate sound
-
-The console now renders 30+ facts from browser-local APIs and adds optional GPU, battery and storage estimates asynchronously. CPU/RAM and network values remain estimates or browser declarations, not claims of exact device identification. Referrers are limited to the hostname. Values are inserted with `textContent`; no third-party requests, IP lookup, geolocation prompt, camera or microphone access is used. Abort signals suppress late async results after the session ends.
-
-This supersedes the earlier muted-first behavior: every video first calls `play()` unmuted. Only a browser `NotAllowedError` falls back to muted playback, with a separate audio status message. The Web Audio oscillator also has an initial nonzero gain when allowed. Any click/tap or non-Escape key can retry sound; a film click is not required. Verified in Firefox with autoplay allowed and Chromium with both allowed and blocked policies. Site code does not override browser permission settings. Reference: https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Autoplay .
-
-## Exact original audio path
-
-The downloaded `index.js` was reread at `interceptUserInput`, `startInvisiblePictureInPictureVideo`, `enablePictureInPicture`, `startTheramin` and `startVideo`. Before interaction, the original attaches a muted autoplaying loop in a 1px offscreen area. On `mousedown`/`mouseup`/`click`, touch or keyboard input, it unmutes that player and calls `play()` (and attempts Picture-in-Picture where supported). The original input hook does not include mouse movement: it relies on native user input for sound activation.
-
-The modular version now restores that early muted warmup with the same player in an offscreen area. Activation moves it into the visible stage without resetting `src`, resumes media and Web Audio before opening a popup, and accepts native pointer input even before a mousemove. It does not force Picture-in-Picture. A default-policy Firefox test confirms mouse movement alone remains muted, while native mouse input unlocks audible playback without reloading the film. This is not an autoplay-permission bypass.
+Original authors and contributors remain credited in the preserved download. Original inspiration: https://github.com/feross/TheAnnoyingSite.com .

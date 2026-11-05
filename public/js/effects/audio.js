@@ -1,27 +1,52 @@
-// Original speech and mouse-controlled theremin, initialized once per session.
+// Audio extracted from the downloaded ptoszek.pl index.js: speak/startTheramin.
+// One graph per session; its waveform, pitch and mouse mapping follow the original.
 import { pick, phrases } from '../config.js';
-export function startAudio(session) {
-  const synth = window.speechSynthesis;
-  function speak(text = pick(phrases)) {
-    if (!synth || !window.SpeechSynthesisUtterance) return;
+export function startAudio(session, host = window) {
+  const synth = host.speechSynthesis;
+  function speak(phrase = pick(phrases)) {
+    if (!synth || !host.SpeechSynthesisUtterance) return;
     synth.cancel();
-    const utterance = new SpeechSynthesisUtterance(text); utterance.volume = 0.5; synth.speak(utterance);
+    synth.speak(new host.SpeechSynthesisUtterance(phrase));
+  }
+  let audioContext, oscillatorNode;
+  const Audio = host.AudioContext || host.webkitAudioContext;
+  if (Audio) {
+    try {
+      audioContext = new Audio();
+      oscillatorNode = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      const pitchBase = 50;
+      const pitchRange = 4000;
+      const wave = audioContext.createPeriodicWave(
+        Array(10).fill(0).map((v, i) => Math.cos(i)),
+        Array(10).fill(0).map((v, i) => Math.sin(i))
+      );
+      oscillatorNode.setPeriodicWave(wave);
+      oscillatorNode.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      oscillatorNode.start(0);
+      audioContext.resume().catch(() => {});
+      session.on(host.document.body, 'mousemove', event => {
+        const { clientX, clientY } = event;
+        const { clientWidth, clientHeight } = host.document.body;
+        if (!clientWidth || !clientHeight) return;
+        const pitch = (clientX - clientWidth / 2) / clientWidth;
+        const volume = (clientY - clientHeight / 2) / clientHeight;
+        oscillatorNode.frequency.value = pitchBase + pitch * pitchRange;
+        gainNode.gain.value = volume * 3;
+      });
+    } catch {
+      if (audioContext && audioContext.state !== 'closed') audioContext.close().catch(() => {});
+      audioContext = null;
+    }
   }
   speak('To był błąd');
-  const Audio = window.AudioContext || window.webkitAudioContext;
-  let audio, oscillator;
-  if (Audio && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    try {
-      audio = new Audio(); oscillator = audio.createOscillator(); const gain = audio.createGain();
-      oscillator.type = 'sawtooth'; oscillator.frequency.value = 100; gain.gain.value = 0.025;
-      oscillator.connect(gain); gain.connect(audio.destination); oscillator.start();
-      audio.resume().catch(() => {});
-      session.on(window, 'pointermove', e => {
-        oscillator.frequency.value = 50 + (e.clientX / Math.max(1, innerWidth)) * 1500;
-        gain.gain.value = (e.clientY / Math.max(1, innerHeight)) * 0.04;
-      });
-    } catch { audio?.close().catch(() => {}); audio = null; }
-  }
-  session.cleanup(() => { synth?.cancel(); if (audio) { oscillator?.stop(); audio.close().catch(() => {}); } });
-  return { speak, resume() { audio?.resume().catch(() => {}); } };
+  session.cleanup(() => {
+    synth?.cancel();
+    if (audioContext) {
+      oscillatorNode?.stop();
+      if (audioContext.state !== 'closed') audioContext.close().catch(() => {});
+    }
+  });
+  return { speak, resume() { if (audioContext?.state !== 'closed') audioContext?.resume().catch(() => {}); } };
 }

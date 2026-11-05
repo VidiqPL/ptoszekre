@@ -8,7 +8,8 @@ import { createDownloads } from './effects/downloads.js';
 const $ = id => document.getElementById(id);
 const video = $('bird-video');
 const media = createMedia(video, $('audio-status'), new URLSearchParams(location.search).get('video'));
-let session = null, popups = null, audio = null;
+let session = null, popups = null, audio = null, spaces = 0;
+let skipInitialClick = false;
 let owner = null;
 const params = new URLSearchParams(location.search);
 try {
@@ -26,16 +27,16 @@ function openBird() {
 }
 function start({child = false} = {}) {
   if (session) return;
-  window.removeEventListener('mousemove', startOnMouseMove);
-  session = new Session(); $('status').textContent = '';
+  session = new Session(); spaces = 0; $('status').textContent = '';
   $('intro').hidden = true; $('experience').hidden = false;
   $('stage').append(video);
   media.play();
   audio = startAudio(session);
   // Any real click/tap/key can unlock sound; it need not target the video.
   const unlockSound = () => { media.resume(); audio?.resume(); };
-  session.on(document, 'pointerdown', unlockSound, {capture: true, passive: true});
-  session.on(document, 'keydown', event => { if (event.key !== 'Escape') unlockSound(); }, {capture: true});
+  for (const type of ['mousedown', 'mouseup', 'touchend', 'keydown', 'keyup', 'keypress']) {
+    session.on(document, type, event => { if (event.key !== 'Escape') unlockSound(); }, {capture: true, passive: true});
+  }
   session.cleanup(() => { media.stop(); audio = null; });
   if (!child) {
     const sessionId = crypto.randomUUID();
@@ -64,16 +65,21 @@ function start({child = false} = {}) {
 function stop() {
   if (!session) return;
   const current = session; session = null; current.stop();
-  $('spy-console').hidden = true; $('experience').hidden = true; $('intro').hidden = false;
+  $('spy-console').hidden = true; $('experience').hidden = true; $('intro').hidden = false; spaces = 0; skipInitialClick = false;
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
 }
 function stopAll() { if (owner?.active) owner.stop(); else stop(); }
-function startOnMouseMove() { start(); }
-if (!owner) window.addEventListener('mousemove', startOnMouseMove, {passive: true});
+// Original activation events: native mousedown/touch/key, never mouse movement.
+function startFromPress(event) {
+  if (session || event.button > 0 || event.target.closest('a,input,textarea,select,[contenteditable]')) return;
+  skipInitialClick = true;
+  start();
+}
+document.addEventListener('mousedown', startFromPress, {capture: true, passive: true});
+document.addEventListener('touchend', startFromPress, {capture: true, passive: true});
 $('start').addEventListener('click', () => start());
-// Like the original mousedown handler: start in the first real gesture if it precedes mouse movement.
-document.addEventListener('pointerdown', () => { if (!session) start(); }, {capture: true, passive: true});
 document.addEventListener('click', event => {
+  if (skipInitialClick) { skipInitialClick = false; return; }
   if (!session || event.target.closest('button,a,.spy-console')) return;
   media.resume();
   openBird();
@@ -85,7 +91,10 @@ document.addEventListener('keydown', event => {
     if (event.code === 'Space' || event.code === 'Enter') { event.preventDefault(); media.resume(); openBird(); }
     return;
   }
-  if (event.code === 'Space' || event.code === 'Enter') { event.preventDefault(); start(); }
+  if (event.code === 'Space') {
+    event.preventDefault();
+    if (++spaces === 3) start();
+  } else if (event.code === 'Enter') start();
 });
 // Popup focus must NOT stop the parent: unlike pagehide, it does not end the session.
 window.addEventListener('pagehide', stop);
