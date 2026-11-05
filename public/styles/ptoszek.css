@@ -51,3 +51,5 @@ body { animation: blurslowly 15s infinite; }
 
 /* Upstream warmup: keep the muted player attached, rather than display:none. */
 .preload-stage { position: fixed; width: 1px; height: 1px; overflow: hidden; top: -10px; left: -10px; pointer-events: none; }
+
+.click-prank { position: fixed; top: 20px; left: 12px; right: 12px; margin: 0; z-index: 25; pointer-events: none; text-align: center; color: red; font-size: clamp(17px, 3vw, 24px); font-weight: bold; line-height: 1.4; text-shadow: 2px 2px #fff, 4px 4px 10px #000; }

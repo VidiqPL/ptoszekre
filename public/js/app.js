@@ -5,10 +5,10 @@ import { createMedia } from './effects/media.js';
 import { createPopupManager } from './effects/popups.js';
 import { startAudio } from './effects/audio.js';
 import { createDownloads } from './effects/downloads.js';
+import { createPopupAudio } from './effects/popup-audio.js';
 const $ = id => document.getElementById(id);
 const video = $('bird-video');
-const media = createMedia(video, $('audio-status'), new URLSearchParams(location.search).get('video'));
-let session = null, popups = null, audio = null, spaces = 0;
+let session = null, popups = null, audio = null, popupAudio = null, spaces = 0;
 let skipInitialClick = false;
 let owner = null;
 const params = new URLSearchParams(location.search);
@@ -19,6 +19,7 @@ try {
     if (candidate?.active && candidate.sessionId === params.get('session')) owner = candidate;
   }
 } catch { /* An unrelated opener must never be read or redirected. */ }
+const media = createMedia(video, $('audio-status'), params.get('video'), {externalAudio: Boolean(owner?.attachAudio)});
 function openBird() {
   if (!session) return;
   if (owner) owner.open(window); else popups.open();
@@ -33,13 +34,14 @@ function start({child = false} = {}) {
   media.play();
   audio = startAudio(session);
   // Any real click/tap/key can unlock sound; it need not target the video.
-  const unlockSound = () => { media.resume(); audio?.resume(); };
+  const unlockSound = () => { media.resume(); audio?.resume(); popupAudio?.resume(); owner?.resumePopupAudio?.(); };
   for (const type of ['mousedown', 'mouseup', 'touchend', 'keydown', 'keyup', 'keypress']) {
     session.on(document, type, event => { if (event.key !== 'Escape') unlockSound(); }, {capture: true, passive: true});
   }
   session.cleanup(() => { media.stop(); audio = null; });
   if (!child) {
     const sessionId = crypto.randomUUID();
+    popupAudio = createPopupAudio(session);
     const downloads = createDownloads();
     session.cleanup(() => downloads.stop());
     popups = createPopupManager({sessionId,
@@ -47,17 +49,23 @@ function start({child = false} = {}) {
       onBlocked: () => { $('status').textContent = 'Przeglądarka zablokowała okienko. Zezwól na wyskakujące okna dla tej strony — następne pojawi się automatycznie w ciągu 5 sekund.'; },
       onLimit: () => { $('status').textContent = 'Masz już 6 ptoszków. Zamknij jedno okienko, żeby wpuścić następnego.'; }
     });
-    window.ptoszekDemo = {sessionId, active: true, open: (source = window) => popups?.open(source), stop};
+    window.ptoszekDemo = {sessionId, active: true, open: (source = window) => popups?.open(source), stop,
+      attachAudio: (...args) => popupAudio?.attach(...args), resumePopupAudio: () => popupAudio?.resume()};
     // Audio was resumed first; popup creation follows in the same input handler.
     popups.open();
     if (downloads.attempts === 0) downloads.trigger();
     popups.start(session);
-    session.cleanup(() => { window.ptoszekDemo.active = false; popups.closeAll(); popups = null; });
+    session.cleanup(() => { window.ptoszekDemo.active = false; popups.closeAll(); popups = null; popupAudio = null; });
   } else {
     window.ptoszekDemo = owner;
+    if (!owner.attachAudio?.(window, video, message => { $('audio-status').textContent = message; })) media.useLocalAudio();
   }
   startChaos(session, $('effects'), $('stage'));
+  $('click-prank').hidden = child;
   if (!child) {
+    let clicks = 0;
+    $('click-count').textContent = '0/10';
+    session.on(video, 'click', () => { $('click-count').textContent = `${++clicks}/10`; });
     showBrowserFacts($('browser-facts'), {signal: session.controller.signal});
     session.later(() => { $('spy-console').hidden = false; $('spy-console').open = true; }, 2000);
   }

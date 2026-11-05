@@ -40,3 +40,11 @@ These are adaptations, not claims that the upstream PRs were merged or applied u
 No cross-site logout requests, camera/microphone/device permission floods, clipboard replacement, navigation/history traps, forced referrer redirects, print/alert loops or unbounded popup spawning. The original intro appearance and media are retained. Source is split into modules, and Escape ends the session.
 
 Original authors and contributors remain credited in the preserved download. Original inspiration: https://github.com/feross/TheAnnoyingSite.com .
+
+## Popup audio and click-counter prank
+
+Upstream child windows only call `startVideo()` with autoplay and loop; they have no special audio-permission mechanism. The new `effects/popup-audio.js` plays each popup’s audio in the main document that the visitor already activated. Popup video stays muted to avoid duplicate sound, while the parent track follows source changes, time, pause, seek, playback rate and looping. Closed windows release their audio and event listeners; Escape releases every parent track. Only known same-origin bundled video URLs can be attached. If the relay is unavailable, the child falls back to its local media player. Browser refusal is reported, not bypassed.
+
+Verified in Firefox and Chromium with normal autoplay restrictions and popup permission enabled: audio for both the first popup and the five-second timer popup plays without clicking the children, tracks video time, and stops when the child closes.
+
+Only the main video displays the centered red label “Kliknij film 10 razy aby zamknąć ptoszka” and a film-click counter. The count deliberately exceeds ten (tested at 10/10 and 33/10) without stopping the session. Escape remains functional. Console interactions do not count, and the initial bird press does not increment the film counter.

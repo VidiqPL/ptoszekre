@@ -1,5 +1,5 @@
 import { videos, createVideoPicker } from '../config.js';
-export function createMedia(video, status, requestedVideo) {
+export function createMedia(video, status, requestedVideo, {externalAudio = false} = {}) {
   const pickVideo = createVideoPicker();
   let filename = videos.includes(requestedVideo) ? requestedVideo : pickVideo();
   let generation = 0, active = false, failures = 0, prepared = false;
@@ -30,7 +30,7 @@ export function createMedia(video, status, requestedVideo) {
     active = true;
     prepare();
     // Unmute the already-prepared player before a popup consumes user activation.
-    video.muted = false;
+    video.muted = externalAudio;
     video.volume = 1;
     attempt(++generation);
   }
@@ -49,9 +49,10 @@ export function createMedia(video, status, requestedVideo) {
       video.play()?.catch(() => {});
     },
     play,
+    useLocalAudio() { externalAudio = false; if (active) { video.muted = false; attempt(generation); } },
     resume() {
       if (!active) return;
-      video.muted = false;
+      video.muted = externalAudio;
       attempt(generation);
     },
     stop() { active = false; prepared = false; generation++; failures = 0; video.pause(); video.removeAttribute('src'); video.load(); }

@@ -46,3 +46,9 @@ test('upstream-style warmup plays muted first and activation reuses the same loa
  media.play();assert.deepEqual(calls,[true,false]);assert.equal(loads,1,'activation must not reload the prepared movie');
  media.stop();
 });
+
+test('popup video stays muted while parent owns sound, avoiding duplicate audio',()=>{
+ const video=new Video();video.play=()=>Promise.resolve();const media=createMedia(video,{textContent:''},'duck.mp4',{externalAudio:true});
+ media.play();assert.equal(video.muted,true);media.resume();assert.equal(video.muted,true);
+ media.useLocalAudio();assert.equal(video.muted,false);media.stop();
+});
