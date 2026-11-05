@@ -13,7 +13,7 @@ export function startAudio(session) {
   if (Audio && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
     try {
       audio = new Audio(); oscillator = audio.createOscillator(); const gain = audio.createGain();
-      oscillator.type = 'sawtooth'; oscillator.frequency.value = 100; gain.gain.value = 0;
+      oscillator.type = 'sawtooth'; oscillator.frequency.value = 100; gain.gain.value = 0.025;
       oscillator.connect(gain); gain.connect(audio.destination); oscillator.start();
       audio.resume().catch(() => {});
       session.on(window, 'pointermove', e => {

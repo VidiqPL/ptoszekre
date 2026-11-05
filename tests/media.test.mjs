@@ -11,7 +11,7 @@ test('popup videos are shuffled without repeats until every film has been used',
 });
 class Video extends EventTarget {
  constructor(){super();this.muted=false;this.calls=0;}
- play(){this.calls++;return this.calls===1?Promise.reject(Error('autoplay denied')):Promise.resolve();}
+ play(){this.calls++;return this.calls===1?Promise.reject(Object.assign(Error('autoplay denied'),{name:'NotAllowedError'})):Promise.resolve();}
  pause(){} removeAttribute(name){delete this[name];} load(){}
 }
 test('new windows loop the assigned film and retry autoplay muted when sound is blocked',async()=>{
@@ -26,8 +26,13 @@ test('unsupported video falls back and stops retrying after Stop',()=>{
  media.stop();video.dispatchEvent(new Event('error'));assert.equal(video.src,undefined);
 });
 
-test('timer-opened video starts muted immediately, without a mouse event',()=>{
+test('every new video tries sound immediately, without waiting for a click',()=>{
  const video=new Video();const mutedAtPlay=[];video.play=()=>{mutedAtPlay.push(video.muted);return Promise.resolve();};
- const media=createMedia(video,{textContent:''},'duck.mp4',{background:true});media.play();
- assert.deepEqual(mutedAtPlay,[true]);assert.equal(video.preload,'auto');assert.equal(video.loop,true);media.stop();
+ const media=createMedia(video,{textContent:''},'duck.mp4');media.play();
+ assert.deepEqual(mutedAtPlay,[false]);assert.equal(video.volume,1);assert.equal(video.preload,'auto');assert.equal(video.loop,true);media.stop();
+});
+test('blocked sound is explained, muted fallback plays, and any later unlock clears the message',async()=>{
+ const video=new Video(),status={textContent:''};const media=createMedia(video,status,'duck.mp4');media.play();
+ await new Promise(r=>setTimeout(r,0));assert.equal(video.muted,true);assert.match(status.textContent,/blokuje dźwięk/);
+ media.resume();await new Promise(r=>setTimeout(r,0));assert.equal(video.muted,false);assert.equal(status.textContent,'');media.stop();
 });

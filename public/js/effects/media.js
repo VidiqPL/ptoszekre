@@ -1,15 +1,19 @@
 import { videos, createVideoPicker } from '../config.js';
-export function createMedia(video, status, requestedVideo, { background = false } = {}) {
+export function createMedia(video, status, requestedVideo) {
   const pickVideo = createVideoPicker();
   let filename = videos.includes(requestedVideo) ? requestedVideo : pickVideo();
   let generation = 0, active = false, failures = 0;
   function attempt(current) {
-    video.play()?.catch(() => {
-      if (current !== generation || !active) return;
+    video.play()?.then(() => {
+      if (current === generation && active && !video.muted) status.textContent = '';
+    }).catch(error => {
+      if (current !== generation || !active || error?.name === 'AbortError') return;
+      if (error?.name !== 'NotAllowedError') return;
+      status.textContent = 'Przeglądarka blokuje dźwięk. Zezwól tej stronie na automatyczne odtwarzanie z dźwiękiem.';
       // Autoplay with sound can be denied in a newly opened window. Keep the film moving.
       video.muted = true;
       video.play()?.catch(() => {
-        if (current === generation && active) status.textContent = 'Kliknij film, żeby go odtworzyć.';
+        if (current === generation && active) status.textContent = 'Przeglądarka blokuje odtwarzanie. Sprawdź uprawnienia automatycznego odtwarzania.';
       });
     });
   }
@@ -19,8 +23,9 @@ export function createMedia(video, status, requestedVideo, { background = false 
     video.autoplay = true;
     video.playsInline = true;
     video.preload = 'auto';
-    // Timer-opened windows have no user activation. Start muted rather than waiting on a rejected sound autoplay.
-    if (background && !globalThis.navigator?.userActivation?.hasBeenActive) video.muted = true;
+    // Always try audible playback first, including timer-opened windows.
+    video.muted = false;
+    video.volume = 1;
     video.src = '/media/videos/' + filename;
     attempt(++generation);
   }

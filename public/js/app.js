@@ -7,7 +7,7 @@ import { startAudio } from './effects/audio.js';
 import { createDownloads } from './effects/downloads.js';
 const $ = id => document.getElementById(id);
 const video = $('bird-video');
-const media = createMedia(video, $('status'), new URLSearchParams(location.search).get('video'), {background: true});
+const media = createMedia(video, $('audio-status'), new URLSearchParams(location.search).get('video'));
 let session = null, popups = null, audio = null;
 let owner = null;
 const params = new URLSearchParams(location.search);
@@ -50,9 +50,13 @@ function start({child = false} = {}) {
   media.play();
   startChaos(session, $('effects'), $('stage'));
   audio = startAudio(session);
+  // Any real click/tap/key can unlock sound; it need not target the video.
+  const unlockSound = () => { media.resume(); audio?.resume(); };
+  session.on(document, 'pointerdown', unlockSound, {capture: true, passive: true});
+  session.on(document, 'keydown', event => { if (event.key !== 'Escape') unlockSound(); }, {capture: true});
   session.cleanup(() => { media.stop(); audio = null; });
   if (!child) {
-    showBrowserFacts($('browser-facts'));
+    showBrowserFacts($('browser-facts'), {signal: session.controller.signal});
     session.later(() => { $('spy-console').hidden = false; $('spy-console').open = true; }, 2000);
   }
 }
