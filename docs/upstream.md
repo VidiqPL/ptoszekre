@@ -19,3 +19,11 @@ Original references:
 - https://github.com/feross/TheAnnoyingSite.com
 
 The playback view has no toolbar or native video controls. Clicking the video or pressing Space/Enter opens another popup using that window’s user activation. Each child URL receives a video from a shuffled list, so sibling windows have different films until the playlist is exhausted. Videos autoplay and loop; blocked audio falls back to muted playback, and an interaction retries with sound. The local-only console uses a collapsible white panel to match the original plain page. Escape still stops playback and closes owned windows.
+
+## Automatic windows and movement
+
+The original only called `openWindow()` from input events; opening a new window every five seconds is an explicit addition. One parent-owned interval opens up to six simultaneous windows, retries blocked attempts at the next tick, and is cleared on Escape/page exit. Child windows do not create competing auto-open timers.
+
+Original movement used random positive/negative velocities of 15px and a 50ms interval. The current controller uses those values, starts moving a popup before its scripts load, and clamps/reflects positions using screen coordinates that include secondary-monitor offsets. Movement is not attached to mouse events. Timer-opened videos preload and start muted without waiting on sound autoplay permission; `canplay` retries pending playback. Browser popup permission is still necessary for timer opens, and normal tabs/mobile browsers cannot be moved.
+
+Other intentional differences from upstream remain listed above: no third-party forced logouts, clipboard spam, navigation traps, or permission floods. Source remains organized into separate modules.

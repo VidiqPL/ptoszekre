@@ -2,11 +2,11 @@ import { Session } from './session.js';
 import { startChaos } from './effects/chaos.js';
 import { showBrowserFacts } from './effects/console.js';
 import { createMedia } from './effects/media.js';
-import { createPopupManager, bouncePopup } from './effects/popups.js';
+import { createPopupManager } from './effects/popups.js';
 import { startAudio } from './effects/audio.js';
 const $ = id => document.getElementById(id);
 const video = $('bird-video');
-const media = createMedia(video, $('status'), new URLSearchParams(location.search).get('video'));
+const media = createMedia(video, $('status'), new URLSearchParams(location.search).get('video'), {background: new URLSearchParams(location.search).get('child') === 'true'});
 let session = null, popups = null, audio = null, spaces = 0;
 let owner = null;
 const params = new URLSearchParams(location.search);
@@ -28,16 +28,16 @@ function start({child = false} = {}) {
   if (!child) {
     const sessionId = crypto.randomUUID();
     popups = createPopupManager({sessionId,
-      onBlocked: () => { $('status').textContent = 'Przeglądarka zablokowała okienko. Zezwól na wyskakujące okna dla tej strony i kliknij film albo naciśnij spację.'; },
+      onBlocked: () => { $('status').textContent = 'Przeglądarka zablokowała okienko. Zezwól na wyskakujące okna dla tej strony — następne pojawi się automatycznie w ciągu 5 sekund.'; },
       onLimit: () => { $('status').textContent = 'Masz już 6 ptoszków. Zamknij jedno okienko, żeby wpuścić następnego.'; }
     });
     window.ptoszekDemo = {sessionId, active: true, open: (source = window) => popups?.open(source), stop};
     // Open before media/fullscreen calls can consume the user activation.
     popups.open();
+    popups.start(session);
     session.cleanup(() => { window.ptoszekDemo.active = false; popups.closeAll(); popups = null; });
   } else {
     window.ptoszekDemo = owner;
-    bouncePopup(session);
   }
   $('intro').hidden = true; $('experience').hidden = false;
   media.play();

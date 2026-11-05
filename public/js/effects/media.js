@@ -1,5 +1,5 @@
 import { videos, createVideoPicker } from '../config.js';
-export function createMedia(video, status, requestedVideo) {
+export function createMedia(video, status, requestedVideo, { background = false } = {}) {
   const pickVideo = createVideoPicker();
   let filename = videos.includes(requestedVideo) ? requestedVideo : pickVideo();
   let generation = 0, active = false, failures = 0;
@@ -18,9 +18,13 @@ export function createMedia(video, status, requestedVideo) {
     video.loop = true;
     video.autoplay = true;
     video.playsInline = true;
+    video.preload = 'auto';
+    // Timer-opened windows have no user activation. Start muted rather than waiting on a rejected sound autoplay.
+    if (background && !globalThis.navigator?.userActivation?.hasBeenActive) video.muted = true;
     video.src = '/media/videos/' + filename;
     attempt(++generation);
   }
+  video.addEventListener('canplay', () => { if (active && video.paused) attempt(generation); });
   video.addEventListener('error', () => {
     if (!active) return;
     if (++failures >= videos.length) { status.textContent = 'Nie udało się odtworzyć filmów.'; return; }

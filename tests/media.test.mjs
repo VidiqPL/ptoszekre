@@ -25,3 +25,9 @@ test('unsupported video falls back and stops retrying after Stop',()=>{
  media.play();video.dispatchEvent(new Event('error'));assert.ok(video.src.startsWith('/media/videos/'));
  media.stop();video.dispatchEvent(new Event('error'));assert.equal(video.src,undefined);
 });
+
+test('timer-opened video starts muted immediately, without a mouse event',()=>{
+ const video=new Video();const mutedAtPlay=[];video.play=()=>{mutedAtPlay.push(video.muted);return Promise.resolve();};
+ const media=createMedia(video,{textContent:''},'duck.mp4',{background:true});media.play();
+ assert.deepEqual(mutedAtPlay,[true]);assert.equal(video.preload,'auto');assert.equal(video.loop,true);media.stop();
+});
